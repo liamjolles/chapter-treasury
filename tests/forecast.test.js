@@ -10,34 +10,42 @@ const byFee = [
   { label: 'Pig Roast', collected: 1000, outstanding: 400 }
 ];
 
-test('parses the journal, matching entries to fees by event name', () => {
+const EVENT_COLUMN = { ...CONFIG, JOURNAL: { HEADER_ROW: 1, DATE_HEADER: 'Date', DESCRIPTION_HEADER: 'Description', EVENT_HEADER: 'Event', AMOUNT_HEADER: 'Amount', DEFAULT_FEE: null } };
+
+test('parses the journal below its header row, defaulting entries to Social Fee', () => {
   const { entries, issues } = parseJournal(readCsv('sample-data/journal-sample.csv'), CONFIG);
-  assert.deepEqual(entries.map((e) => [e.feeKey, e.amount]), [
-    ['social', 800], ['formal', 2000], ['pigRoast', 1200], ['pigRoast', 250], [null, 150]
+  assert.deepEqual(entries.map((e) => [e.row, e.feeKey, e.amount]), [
+    [5, 'social', 1750], [6, 'social', 3000], [7, 'social', 4000], [8, 'formal', 2500]
   ]);
-  assert.deepEqual(issues.map((i) => [i.row, i.type]), [[7, 'unrecognized_amount']]);
+  assert.deepEqual(issues.map((i) => [i.row, i.type]), [[9, 'unrecognized_amount']]);
 });
 
-test('finds columns by header text, in any order', () => {
-  const rows = [['Amount', 'Event', 'Description', 'Date'], [-300, 'Formal', 'Photographer', '2026-10-01']];
-  const { entries } = parseJournal(rows, CONFIG);
-  assert.deepEqual(entries.map((e) => [e.feeKey, e.amount, e.description]), [['formal', 300, 'Photographer']]);
+test('with an event column, matches on it and leaves unmatched entries unassigned', () => {
+  const rows = [['Amount', 'Event', 'Description', 'Date'], [-300, 'Formal', 'Photographer', '10/1'], [150, '', 'Supplies', '10/2']];
+  const { entries } = parseJournal(rows, EVENT_COLUMN);
+  assert.deepEqual(entries.map((e) => [e.feeKey, e.amount, e.description]), [['formal', 300, 'Photographer'], [null, 150, 'Supplies']]);
 });
 
 test('a missing journal column is an error', () => {
-  assert.throws(() => parseJournal([['Date', 'Description', 'Amount']], CONFIG), /"Event" column/);
+  assert.throws(() => parseJournal([[], [], [], ['Date', 'Event / Use Case', 'Notes']], CONFIG), /"Cost" column/);
 });
 
 test('without budgets, compares projected income to spending so far', () => {
   const { entries } = parseJournal(readCsv('sample-data/journal-sample.csv'), CONFIG);
   const f = buildForecast(byFee, entries, CONFIG);
   assert.deepEqual(f.lines.map((l) => [l.label, l.projected, l.spent, l.net]), [
-    ['Social Fee', 6500, 800, 5700],
-    ['Formal', 3750, 2000, 1750],
-    ['Pig Roast', 1300, 1450, -150]
+    ['Social Fee', 6500, 8750, -2250],
+    ['Formal', 3750, 2500, 1250],
+    ['Pig Roast', 1300, 0, 1300]
   ]);
+  assert.equal(f.unassigned, 0);
+  assert.equal(f.total.net, -2250 + 1250 + 1300);
+});
+
+test('spending not tied to a fee is subtracted from the total', () => {
+  const f = buildForecast(byFee, [{ feeKey: null, amount: 150 }], CONFIG);
   assert.equal(f.unassigned, 150);
-  assert.equal(f.total.net, 5700 + 1750 - 150 - 150);
+  assert.equal(f.total.net, 6500 + 3750 + 1300 - 150);
 });
 
 test('with budgets, compares projected income to the budget', () => {
@@ -47,8 +55,7 @@ test('with budgets, compares projected income to the budget', () => {
 });
 
 test('forecastRows shows the recovery assumption and a total line', () => {
-  const { entries } = parseJournal(readCsv('sample-data/journal-sample.csv'), CONFIG);
-  const rows = forecastRows(buildForecast(byFee, entries, CONFIG), new Date('2026-11-10T12:00:00Z'));
+  const rows = forecastRows(buildForecast(byFee, [{ feeKey: null, amount: 150 }], CONFIG), new Date('2026-11-10T12:00:00Z'));
   assert.match(rows[1][0], /75%/);
   assert.equal(rows.at(-1)[0], 'Total');
   assert.ok(rows.some((r) => r[0] === 'Spending not tied to an event'));

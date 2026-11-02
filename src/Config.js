@@ -54,13 +54,16 @@ var CONFIG = {
   TOP_BALANCES: 10,
 
   // Journal tab (event spending log). Columns are found by header text, so order doesn't matter.
-  // Each entry is matched to a fee when its Event cell mentions that fee (e.g. "Pig Roast").
+  // An entry counts toward a fee when it mentions that fee (e.g. "Formal venue deposit"), in
+  // the EVENT_HEADER column if there is one, otherwise in the description. Everything else
+  // counts toward DEFAULT_FEE.
   JOURNAL: {
-    HEADER_ROW: 1,
+    HEADER_ROW: 4,
     DATE_HEADER: 'Date',
-    DESCRIPTION_HEADER: 'Description',
-    EVENT_HEADER: 'Event',
-    AMOUNT_HEADER: 'Amount'
+    DESCRIPTION_HEADER: 'Event / Use Case',
+    EVENT_HEADER: null,
+    AMOUNT_HEADER: 'Cost',
+    DEFAULT_FEE: 'social'
   },
 
   // Planned total spend per event. Leave null to compare against spending logged so far.

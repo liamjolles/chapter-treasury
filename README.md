@@ -86,7 +86,10 @@ flowchart LR
    out on the next run.
 4. **Report.** Every run rebuilds Summary, Data Issues, Impact, and Forecast. Live runs
    also save a snapshot of every balance, which is what lets Impact compare each
-   reminder against the member's balance on the following run.
+   reminder against the member's balance on the following run. For the Forecast, each
+   Journal entry counts toward Social Fee unless its description names another event
+   (e.g. "Formal venue deposit"). Planning rows with no cost are ignored, and a cost
+   that isn't a number (`TBD`) is flagged on Data Issues.
 
 ## Project layout
 

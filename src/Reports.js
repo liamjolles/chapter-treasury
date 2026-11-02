@@ -186,7 +186,7 @@ function parseJournal(rows, config) {
   };
   var dateCol = col(j.DATE_HEADER);
   var descCol = col(j.DESCRIPTION_HEADER);
-  var eventCol = col(j.EVENT_HEADER);
+  var eventCol = j.EVENT_HEADER ? col(j.EVENT_HEADER) : descCol;
   var amountCol = col(j.AMOUNT_HEADER);
 
   var entries = [];
@@ -203,7 +203,8 @@ function parseJournal(rows, config) {
     }
     var event = String(r[eventCol] || '').toLowerCase();
     var fee = config.FEES.filter(function (f) { return event && event.indexOf(f.label.split(' ')[0].toLowerCase()) !== -1; })[0];
-    entries.push({ row: rowNumber, date: r[dateCol], description: String(r[descCol] || ''), feeKey: fee ? fee.key : null, amount: Math.abs(amount) });
+    var feeKey = fee ? fee.key : (j.DEFAULT_FEE || null);
+    entries.push({ row: rowNumber, date: r[dateCol], description: String(r[descCol] || ''), feeKey: feeKey, amount: Math.abs(amount) });
   });
   return { entries: entries, issues: issues };
 }
