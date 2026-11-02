@@ -26,7 +26,13 @@ var CONFIG = {
 
   // A blank fee cell means "not billed yet" by default, so nobody is chased for a fee that
   // doesn't apply to them. Set to true to treat blanks the same as "Not Paid".
-  BLANK_MEANS_NOT_PAID: false
+  BLANK_MEANS_NOT_PAID: false,
+
+  // Reminder email content.
+  DUES_LABEL: '2026-2027 social dues',
+  SENDER_NAME: 'Social Chair',
+  PAYMENT_INSTRUCTIONS: 'You can pay your balance through Billhighway:',
+  PAYMENT_LINK: 'https://www.billhighway.com'
 };
 
 if (typeof module !== 'undefined') {

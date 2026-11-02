@@ -171,6 +171,46 @@ function computeOwed(member, fees, config) {
   return { items: items, total: total };
 }
 
+/** 1550 -> "$1,550.00" */
+function formatMoney(n) {
+  var parts = roundCents(n).toFixed(2).split('.');
+  return '$' + parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '.' + parts[1];
+}
+
+/** Build the personal reminder for one member: greeting, itemized balance, total, how to pay. */
+function buildEmail(member, owed, config) {
+  var firstName = member.name.split(/\s+/)[0];
+  var lines = owed.items
+    .filter(function (i) { return i.owed > 0; })
+    .map(function (i) {
+      var detail = i.paid > 0 ? ' (paid ' + formatMoney(i.paid) + ' of ' + formatMoney(i.fee) + ')' : '';
+      return '  ' + i.label + ': ' + formatMoney(i.owed) + detail;
+    });
+
+  var body = [
+    'Hi ' + firstName + ',',
+    '',
+    'This is a reminder that you have an outstanding balance for ' + config.DUES_LABEL + ':',
+    '',
+    lines.join('\n'),
+    '  Total: ' + formatMoney(owed.total),
+    '',
+    config.PAYMENT_INSTRUCTIONS,
+    config.PAYMENT_LINK,
+    '',
+    'If you think this is a mistake, just reply to this email.',
+    '',
+    'Thanks,',
+    config.SENDER_NAME
+  ].join('\n');
+
+  return {
+    to: member.email,
+    subject: 'Reminder: ' + formatMoney(owed.total) + ' outstanding for ' + config.DUES_LABEL,
+    body: body
+  };
+}
+
 if (typeof module !== 'undefined') {
   module.exports = {
     STATUS: STATUS,
@@ -181,6 +221,8 @@ if (typeof module !== 'undefined') {
     classifyCell: classifyCell,
     parsePayments: parsePayments,
     roundCents: roundCents,
-    computeOwed: computeOwed
+    computeOwed: computeOwed,
+    formatMoney: formatMoney,
+    buildEmail: buildEmail
   };
 }
