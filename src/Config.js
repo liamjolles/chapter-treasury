@@ -32,7 +32,11 @@ var CONFIG = {
   DUES_LABEL: '2026-2027 social dues',
   SENDER_NAME: 'Social Chair',
   PAYMENT_INSTRUCTIONS: 'You can pay your balance through Billhighway:',
-  PAYMENT_LINK: 'https://www.billhighway.com'
+  PAYMENT_LINK: 'https://www.billhighway.com',
+
+  // Don't email the same person again within this many days. Six (not seven) so a weekly
+  // trigger that fires a few minutes early still sends.
+  COOLDOWN_DAYS: 6
 };
 
 if (typeof module !== 'undefined') {
