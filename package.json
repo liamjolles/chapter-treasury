@@ -1,0 +1,13 @@
+{
+  "name": "chapter-treasury",
+  "version": "0.1.0",
+  "description": "Dues tracking, validation, reporting, and collection reminders for a chapter's Google Sheets payment tracker (Google Apps Script).",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
