@@ -22,7 +22,11 @@ var CONFIG = {
   EMAIL_COLUMN: 'F',
 
   // Header rows that start each class block (matched case-insensitively in the name column).
-  CLASS_NAMES: ['FRESHMEN', 'SOPHOMORE', 'JUNIOR', 'SENIOR']
+  CLASS_NAMES: ['FRESHMEN', 'SOPHOMORE', 'JUNIOR', 'SENIOR'],
+
+  // A blank fee cell means "not billed yet" by default, so nobody is chased for a fee that
+  // doesn't apply to them. Set to true to treat blanks the same as "Not Paid".
+  BLANK_MEANS_NOT_PAID: false
 };
 
 if (typeof module !== 'undefined') {

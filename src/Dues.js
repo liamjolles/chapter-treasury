@@ -137,6 +137,40 @@ function issue(row, name, field, type, value, message) {
   return { row: row, name: name, field: field, type: type, value: value, message: message };
 }
 
+function roundCents(n) {
+  return Math.round(n * 100) / 100;
+}
+
+/**
+ * Work out what a member owes for each fee.
+ *   Paid -> 0 · Not Paid -> full fee · number -> fee minus amount (floored at 0)
+ *   blank -> not billed (or full fee if BLANK_MEANS_NOT_PAID) · unrecognized -> not counted
+ */
+function computeOwed(member, fees, config) {
+  var items = config.FEES.map(function (f) {
+    var fee = fees[f.key];
+    var c = classifyCell(member.fees[f.key]);
+    var item = { key: f.key, label: f.label, fee: fee, status: c.status, billed: true, paid: 0, owed: 0 };
+
+    if (c.status === STATUS.PAID) {
+      item.paid = fee;
+    } else if (c.status === STATUS.NOT_PAID) {
+      item.owed = fee;
+    } else if (c.status === STATUS.PARTIAL) {
+      item.paid = Math.max(0, c.amount);
+      item.owed = roundCents(Math.max(0, fee - item.paid));
+    } else if (c.status === STATUS.BLANK && config.BLANK_MEANS_NOT_PAID) {
+      item.owed = fee;
+    } else {
+      item.billed = false; // blank (not billed yet) or unrecognized (flagged as a data issue)
+    }
+    return item;
+  });
+
+  var total = roundCents(items.reduce(function (sum, i) { return sum + i.owed; }, 0));
+  return { items: items, total: total };
+}
+
 if (typeof module !== 'undefined') {
   module.exports = {
     STATUS: STATUS,
@@ -145,6 +179,8 @@ if (typeof module !== 'undefined') {
     parseMoney: parseMoney,
     parseFeeAmount: parseFeeAmount,
     classifyCell: classifyCell,
-    parsePayments: parsePayments
+    parsePayments: parsePayments,
+    roundCents: roundCents,
+    computeOwed: computeOwed
   };
 }
