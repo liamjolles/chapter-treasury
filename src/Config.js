@@ -36,7 +36,10 @@ var CONFIG = {
 
   // Don't email the same person again within this many days. Six (not seven) so a weekly
   // trigger that fires a few minutes early still sends.
-  COOLDOWN_DAYS: 6
+  COOLDOWN_DAYS: 6,
+
+  // How many of the largest outstanding balances to list on the Summary tab.
+  TOP_BALANCES: 10
 };
 
 if (typeof module !== 'undefined') {
