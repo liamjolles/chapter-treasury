@@ -4,7 +4,7 @@
   "description": "Dues tracking, validation, reporting, and collection reminders for a chapter's Google Sheets payment tracker (Google Apps Script).",
   "private": true,
   "scripts": {
-    "test": "node --test tests/"
+    "test": "node --test tests/*.test.js"
   },
   "engines": {
     "node": ">=20"
