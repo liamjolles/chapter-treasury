@@ -165,8 +165,98 @@ function impactRows(impact, trend, now) {
   return rows;
 }
 
+// ---------------------------------------------------------------------------------------
+// Forecast: will collections cover what each event costs?
+// ---------------------------------------------------------------------------------------
+
+function parseAmount(value) {
+  if (typeof value === 'number') return value;
+  var s = String(value || '').replace(/[$,\s]/g, '');
+  return /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : null;
+}
+
+/** Read the Journal tab into spending entries, each matched to a fee key (or null). */
+function parseJournal(rows, config) {
+  var j = config.JOURNAL;
+  var header = (rows[j.HEADER_ROW - 1] || []).map(function (h) { return String(h).trim().toLowerCase(); });
+  var col = function (name) {
+    var i = header.indexOf(name.toLowerCase());
+    if (i === -1) throw new Error('Journal tab has no "' + name + '" column in row ' + j.HEADER_ROW + '.');
+    return i;
+  };
+  var dateCol = col(j.DATE_HEADER);
+  var descCol = col(j.DESCRIPTION_HEADER);
+  var eventCol = col(j.EVENT_HEADER);
+  var amountCol = col(j.AMOUNT_HEADER);
+
+  var entries = [];
+  var issues = [];
+  rows.slice(j.HEADER_ROW).forEach(function (r, idx) {
+    var rowNumber = j.HEADER_ROW + idx + 1;
+    var raw = r[amountCol];
+    if (raw === '' || raw === null || raw === undefined) return;
+    var amount = parseAmount(raw);
+    if (amount === null) {
+      issues.push({ row: rowNumber, name: String(r[descCol] || ''), field: 'Amount', type: 'unrecognized_amount', value: raw,
+        message: 'Journal amount is not a number; left out of the forecast.' });
+      return;
+    }
+    var event = String(r[eventCol] || '').toLowerCase();
+    var fee = config.FEES.filter(function (f) { return event && event.indexOf(f.label.split(' ')[0].toLowerCase()) !== -1; })[0];
+    entries.push({ row: rowNumber, date: r[dateCol], description: String(r[descCol] || ''), feeKey: fee ? fee.key : null, amount: Math.abs(amount) });
+  });
+  return { entries: entries, issues: issues };
+}
+
+/**
+ * For each fee: money in (collected, plus the expected share of what's outstanding)
+ * against money out (the budget if set, otherwise spending logged so far).
+ * @param byFee  summarizeCollections(...).byFee
+ */
+function buildForecast(byFee, entries, config) {
+  var rate = config.EXPECTED_RECOVERY_RATE;
+  var lines = config.FEES.map(function (f, i) {
+    var b = byFee[i];
+    var spent = round2(entries.filter(function (e) { return e.feeKey === f.key; })
+      .reduce(function (s, e) { return s + e.amount; }, 0));
+    var budget = config.BUDGETS && typeof config.BUDGETS[f.key] === 'number' ? config.BUDGETS[f.key] : null;
+    var projected = round2(b.collected + b.outstanding * rate);
+    var planned = budget !== null ? budget : spent;
+    return { label: f.label, collected: b.collected, outstanding: b.outstanding, projected: projected,
+      spent: spent, budget: budget, net: round2(projected - planned) };
+  });
+
+  var unassigned = round2(entries.filter(function (e) { return !e.feeKey; }).reduce(function (s, e) { return s + e.amount; }, 0));
+  var total = lines.reduce(function (t, l) {
+    t.collected += l.collected; t.outstanding += l.outstanding; t.projected += l.projected; t.spent += l.spent;
+    t.net += l.net;
+    return t;
+  }, { label: 'Total', collected: 0, outstanding: 0, projected: 0, spent: unassigned, budget: null, net: -unassigned });
+  ['collected', 'outstanding', 'projected', 'spent', 'net'].forEach(function (k) { total[k] = round2(total[k]); });
+
+  return { rate: rate, lines: lines, unassigned: unassigned, total: total };
+}
+
+/** Rows for the Forecast tab. */
+function forecastRows(forecast, now) {
+  var rows = [
+    ['Budget forecast', 'Updated ' + now.toISOString()],
+    ['Assumes ' + Math.round(forecast.rate * 100) + '% of outstanding balances are still collected.'],
+    [],
+    ['Event', 'Collected', 'Outstanding', 'Projected income', 'Spent so far', 'Budget', 'Surplus / (shortfall)']
+  ];
+  var line = function (l) { return [l.label, l.collected, l.outstanding, l.projected, l.spent, l.budget === null ? '' : l.budget, l.net]; };
+  forecast.lines.forEach(function (l) { rows.push(line(l)); });
+  if (forecast.unassigned > 0) rows.push(['Spending not tied to an event', '', '', '', forecast.unassigned, '', -forecast.unassigned]);
+  rows.push(line(forecast.total));
+  return rows;
+}
+
 if (typeof module !== 'undefined') {
   module.exports = {
+    parseJournal: parseJournal,
+    buildForecast: buildForecast,
+    forecastRows: forecastRows,
     summarizeCollections: summarizeCollections,
     summaryRows: summaryRows,
     SNAPSHOT_HEADER: SNAPSHOT_HEADER,

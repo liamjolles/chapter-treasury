@@ -39,7 +39,23 @@ var CONFIG = {
   COOLDOWN_DAYS: 6,
 
   // How many of the largest outstanding balances to list on the Summary tab.
-  TOP_BALANCES: 10
+  TOP_BALANCES: 10,
+
+  // Journal tab (event spending log). Columns are found by header text, so order doesn't matter.
+  // Each entry is matched to a fee when its Event cell mentions that fee (e.g. "Pig Roast").
+  JOURNAL: {
+    HEADER_ROW: 1,
+    DATE_HEADER: 'Date',
+    DESCRIPTION_HEADER: 'Description',
+    EVENT_HEADER: 'Event',
+    AMOUNT_HEADER: 'Amount'
+  },
+
+  // Planned total spend per event. Leave null to compare against spending logged so far.
+  BUDGETS: { social: null, formal: null, pigRoast: null },
+
+  // Share of today's outstanding balance the forecast expects to still come in (0 to 1).
+  EXPECTED_RECOVERY_RATE: 0.75
 };
 
 if (typeof module !== 'undefined') {
