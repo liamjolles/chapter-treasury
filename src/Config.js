@@ -3,8 +3,20 @@
  * (A = first column, row 1 = first row).
  */
 var CONFIG = {
+  // true: write would-be emails to the Preview tab and send nothing.
+  // false: send reminders by email and record them in the Reminder Log.
+  DRY_RUN: true,
+
   SHEETS: {
-    PAYMENTS: 'Payments'
+    PAYMENTS: 'Payments',
+    JOURNAL: 'Journal',
+    PREVIEW: 'Preview',
+    LOG: 'Reminder Log',
+    ISSUES: 'Data Issues',
+    SUMMARY: 'Summary',
+    SNAPSHOTS: 'Snapshots',
+    IMPACT: 'Impact',
+    FORECAST: 'Forecast'
   },
 
   // Row holding the fee amounts (Social Fee / Formal / Pig Roast). Amounts are read from
